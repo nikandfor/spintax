@@ -25,6 +25,8 @@ type (
 		String() string
 		// Returns all possible options
 		All() []string
+		// Iter gives options one by one
+		Iter() <-chan string
 	}
 )
 
@@ -175,3 +177,68 @@ func (a Alt) All() []string {
 }
 
 func (s Str) All() []string { return []string{string(s)} }
+
+func (e Exp) Iter() <-chan string {
+	c := make(chan string, 1)
+	go func() {
+		l := len(e)
+		t := make([]string, l)
+		s := make([]<-chan string, l)
+		var b strings.Builder
+		var ok bool
+
+		for j := 0; j < l; j++ {
+			s[j] = e[j].Iter()
+			t[j] = <-s[j]
+		}
+
+		for {
+			b.Reset()
+
+			for _, s := range t {
+				b.WriteString(s)
+			}
+			c <- b.String()
+
+			var j int
+			for ; j < l; j++ {
+				t[j], ok = <-s[j]
+				if ok {
+					break
+				}
+				s[j] = e[j].Iter()
+				t[j], ok = <-s[j]
+				if !ok {
+					panic("no data at renewed Iter")
+				}
+			}
+			if j == l {
+				break
+			}
+		}
+
+		close(c)
+	}()
+	return c
+}
+
+func (a Alt) Iter() <-chan string {
+	c := make(chan string, 1)
+	go func() {
+		for _, e := range a {
+			sub := e.Iter()
+			for l := range sub {
+				c <- l
+			}
+		}
+		close(c)
+	}()
+	return c
+}
+
+func (s Str) Iter() <-chan string {
+	c := make(chan string, 1)
+	c <- string(s)
+	close(c)
+	return c
+}

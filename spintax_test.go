@@ -92,6 +92,35 @@ func TestAll(t *testing.T) {
 	assert.Equal(t, vars, e.All())
 }
 
+func TestIter(t *testing.T) {
+	all := iter_all(Parse("string"))
+	assert.Equal(t, []string{"string"}, all)
+
+	all = iter_all(Parse("{a|b}"))
+	assert.Equal(t, []string{"a", "b"}, all)
+
+	all = iter_all(Parse("a {|b|c} d"))
+	assert.Equal(t, []string{"a  d", "a b d", "a c d"}, all)
+
+	all = iter_all(Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`))
+	vars := []string{
+		"pref str_a suff",
+		"pref subp alt_a subs suff",
+		"pref subp alt_b subs suff",
+		"pref subp alt_c subs suff",
+	}
+	assert.Equal(t, vars, all)
+}
+
+func iter_all(e Spintax) []string {
+	c := e.Iter()
+	var res []string
+	for s := range c {
+		res = append(res, s)
+	}
+	return res
+}
+
 func ExampleSpintax() {
 	e := Parse(`first {single|second {mid_a|mid_b|mid_c} before_last} last`)
 
