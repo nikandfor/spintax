@@ -70,3 +70,23 @@ func TestParseRoll(t *testing.T) {
 	s = `pref {|str_a|str_b|} suff`
 	assert.Equal(t, s, Parse(s).String())
 }
+
+func TestAll(t *testing.T) {
+	all := Parse("string").All()
+	assert.Equal(t, []string{"string"}, all)
+
+	all = Parse("{a|b}").All()
+	assert.Equal(t, []string{"a", "b"}, all)
+
+	all = Parse("a {|b|c} d").All()
+	assert.Equal(t, []string{"a  d", "a b d", "a c d"}, all)
+
+	e := Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	vars := []string{
+		"pref str_a suff",
+		"pref subp alt_a subs suff",
+		"pref subp alt_b subs suff",
+		"pref subp alt_c subs suff",
+	}
+	assert.Equal(t, vars, e.All())
+}

@@ -14,6 +14,7 @@ type (
 		Spin() string
 		Count() int
 		String() string
+		All() []string
 	}
 )
 
@@ -132,3 +133,34 @@ func (a Alt) String() string {
 }
 
 func (s Str) String() string { return string(s) }
+
+func (e Exp) All() []string {
+	if len(e) == 1 {
+		return e[0].All()
+	}
+
+	f := e[0].All()
+	t := e[1:].All()
+
+	var r []string
+	for _, f := range f {
+		for _, t := range t {
+			r = append(r, f+t)
+		}
+	}
+
+	return r
+}
+
+func (a Alt) All() []string {
+	var r []string
+
+	for _, e := range a {
+		all := e.All()
+		r = append(r, all...)
+	}
+
+	return r
+}
+
+func (s Str) All() []string { return []string{string(s)} }
