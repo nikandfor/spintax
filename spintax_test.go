@@ -1,6 +1,7 @@
 package spintax
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,7 +49,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 4, e.Count())
 }
 
-func TestGen(t *testing.T) {
+func TestSpin(t *testing.T) {
 	e := Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
 	vars := []string{
 		"pref str_a suff",
@@ -89,4 +90,17 @@ func TestAll(t *testing.T) {
 		"pref subp alt_c subs suff",
 	}
 	assert.Equal(t, vars, e.All())
+}
+
+func ExampleSpintax() {
+	e := Parse(`first {single|second {mid_a|mid_b|mid_c} before_last} last`)
+
+	for _, s := range e.All() {
+		fmt.Printf("%v\n", s)
+	}
+	// Output:
+	// first single last
+	// first second mid_a before_last last
+	// first second mid_b before_last last
+	// first second mid_c before_last last
 }

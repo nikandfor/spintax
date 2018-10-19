@@ -1,3 +1,4 @@
+// spintax is an text generator from Spintax template
 package spintax
 
 import (
