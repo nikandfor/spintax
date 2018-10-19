@@ -6,18 +6,28 @@ import (
 )
 
 type (
+	// Exp is an Spintax expression.
+	// Spin returns all pars cat together
 	Exp []Spintax
+	// Alt is an alternative expression
+	// Spin returns one of options
 	Alt []Spintax
+	// Str is an simple string
 	Str string
 
 	Spintax interface {
+		// Returns one of options
 		Spin() string
+		// Counts total number of options
 		Count() int
+		// Returns template
 		String() string
+		// Returns all possible options
 		All() []string
 	}
 )
 
+// Parse parses template
 func Parse(exp string) Spintax {
 	e, _ := parseExp(exp, 0)
 	return e
