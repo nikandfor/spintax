@@ -141,21 +141,21 @@ func TestIter(t *testing.T) {
 	e, err = Parse("{a|b}")
 	assert.NoError(t, err)
 	all = iter_all(e)
-	assert.Equal(t, []string{"a", "b"}, all)
+	assert.Equal(t, []string{"b", "a"}, all)
 
 	e, err = Parse("a {|b|c} d")
 	assert.NoError(t, err)
 	all = iter_all(e)
-	assert.Equal(t, []string{"a  d", "a b d", "a c d"}, all)
+	assert.Equal(t, []string{"a b d", "a  d", "a c d"}, all)
 
 	e, err = Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
 	assert.NoError(t, err)
 	all = iter_all(e)
 	vars := []string{
-		"pref str_a suff",
-		"pref subp alt_a subs suff",
 		"pref subp alt_b subs suff",
+		"pref subp alt_a subs suff",
 		"pref subp alt_c subs suff",
+		"pref str_a suff",
 	}
 	assert.Equal(t, vars, all)
 }

@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var primes = []int{101, 1009, 10007, 100003, 1000003}
+
 type (
 	// Exp is an Spintax expression.
 	// Spin returns all pars cat together
@@ -245,11 +247,23 @@ func (e Exp) Iter() <-chan string {
 func (a Alt) Iter() <-chan string {
 	c := make(chan string, 1)
 	go func() {
-		for _, e := range a {
+		l := len(a)
+		var p int = 1
+		for _, P := range primes {
+			if l%P == 0 {
+				continue
+			}
+			p = P
+			break
+		}
+		n := 0
+		for i := l / 2; n < l; i = (i + p) % l {
+			e := a[i]
 			sub := e.Iter()
 			for l := range sub {
 				c <- l
 			}
+			n++
 		}
 		close(c)
 	}()
