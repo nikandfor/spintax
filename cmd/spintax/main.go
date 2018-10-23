@@ -35,12 +35,18 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		for len(data) > 0 && data[len(data)-1] == '\n' {
+			data = data[:len(data)-1]
+		}
 		templ = string(data)
 	} else {
 		templ = arg
 	}
 
-	e := spintax.Parse(templ)
+	e, err := spintax.Parse(templ)
+	if err != nil {
+		fmt.Printf("parse error: %v", err)
+	}
 
 	if *cnt {
 		fmt.Printf("%v\n", e.Count())

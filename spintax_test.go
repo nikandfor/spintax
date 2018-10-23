@@ -8,20 +8,32 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	e := Parse(`string`)
+	e, err := Parse(`{}`)
+	assert.NoError(t, err)
+	assert.Equal(t, Str(""), e)
+
+	e, err = Parse(`string`)
+	assert.NoError(t, err)
 	assert.Equal(t, Str(`string`), e)
 
-	e = Parse(`{str_a|str_b}`)
+	e, err = Parse(`{str_a|str_b}`)
+	assert.NoError(t, err)
 	assert.Equal(t, Alt{Str("str_a"), Str("str_b")}, e)
 
-	e = Parse(`pref {str_a|str_b} suff`)
+	e, err = Parse(`{str}`)
+	assert.NoError(t, err)
+	assert.Equal(t, Str("str"), e)
+
+	e, err = Parse(`pref {str_a|str_b} suff`)
+	assert.NoError(t, err)
 	assert.Equal(t, Exp{
 		Str("pref "),
 		Alt{Str("str_a"), Str("str_b")},
 		Str(" suff"),
 	}, e)
 
-	e = Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	e, err = Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	assert.NoError(t, err)
 	assert.Equal(t, Exp{
 		Str("pref "),
 		Alt{
@@ -35,7 +47,8 @@ func TestParse(t *testing.T) {
 		Str(" suff"),
 	}, e)
 
-	e = Parse(`pref {|str_a|str_b|} suff`)
+	e, err = Parse(`pref {|str_a|str_b|} suff`)
+	assert.NoError(t, err)
 	assert.Equal(t, Exp{
 		Str("pref "),
 		Alt{Str(""), Str("str_a"), Str("str_b"), Str("")},
@@ -43,14 +56,33 @@ func TestParse(t *testing.T) {
 	}, e)
 }
 
+func TestError(t *testing.T) {
+	_, err := Parse(`{string`)
+	assert.Error(t, err)
+
+	_, err = Parse(`string}`)
+	assert.Error(t, err)
+
+	_, err = Parse(`aa{bb{cc|dd}ee`)
+	assert.Error(t, err)
+
+	_, err = Parse(`aa{bb|cc}dd}ee`)
+	assert.Error(t, err)
+
+	_, err = Parse(`{{str{{{{ing}}`)
+	assert.Error(t, err)
+}
+
 func TestCount(t *testing.T) {
-	e := Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	e, err := Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	assert.NoError(t, err)
 
 	assert.Equal(t, 4, e.Count())
 }
 
 func TestSpin(t *testing.T) {
-	e := Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	e, err := Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	assert.NoError(t, err)
 	vars := []string{
 		"pref str_a suff",
 		"pref subp alt_a subs suff",
@@ -66,23 +98,31 @@ func TestSpin(t *testing.T) {
 
 func TestParseRoll(t *testing.T) {
 	s := `pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`
-	assert.Equal(t, s, Parse(s).String())
+	e, err := Parse(s)
+	assert.NoError(t, err)
+	assert.Equal(t, s, e.String())
 
 	s = `pref {|str_a|str_b|} suff`
-	assert.Equal(t, s, Parse(s).String())
+	e, err = Parse(s)
+	assert.NoError(t, err)
+	assert.Equal(t, s, e.String())
 }
 
 func TestAll(t *testing.T) {
-	all := Parse("string").All()
-	assert.Equal(t, []string{"string"}, all)
+	e, err := Parse("string")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"string"}, e.All())
 
-	all = Parse("{a|b}").All()
-	assert.Equal(t, []string{"a", "b"}, all)
+	e, err = Parse("{a|b}")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"a", "b"}, e.All())
 
-	all = Parse("a {|b|c} d").All()
-	assert.Equal(t, []string{"a  d", "a b d", "a c d"}, all)
+	e, err = Parse("a {|b|c} d")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"a  d", "a b d", "a c d"}, e.All())
 
-	e := Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	e, err = Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	assert.NoError(t, err)
 	vars := []string{
 		"pref str_a suff",
 		"pref subp alt_a subs suff",
@@ -93,16 +133,24 @@ func TestAll(t *testing.T) {
 }
 
 func TestIter(t *testing.T) {
-	all := iter_all(Parse("string"))
+	e, err := Parse("string")
+	assert.NoError(t, err)
+	all := iter_all(e)
 	assert.Equal(t, []string{"string"}, all)
 
-	all = iter_all(Parse("{a|b}"))
+	e, err = Parse("{a|b}")
+	assert.NoError(t, err)
+	all = iter_all(e)
 	assert.Equal(t, []string{"a", "b"}, all)
 
-	all = iter_all(Parse("a {|b|c} d"))
+	e, err = Parse("a {|b|c} d")
+	assert.NoError(t, err)
+	all = iter_all(e)
 	assert.Equal(t, []string{"a  d", "a b d", "a c d"}, all)
 
-	all = iter_all(Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`))
+	e, err = Parse(`pref {str_a|subp {alt_a|alt_b|alt_c} subs} suff`)
+	assert.NoError(t, err)
+	all = iter_all(e)
 	vars := []string{
 		"pref str_a suff",
 		"pref subp alt_a subs suff",
@@ -122,7 +170,10 @@ func iter_all(e Spintax) []string {
 }
 
 func ExampleSpintax() {
-	e := Parse(`first {single|second {mid_a|mid_b|mid_c} before_last} last`)
+	e, err := Parse(`first {single|second {mid_a|mid_b|mid_c} before_last} last`)
+	if err != nil {
+		fmt.Printf("error: %v", err)
+	}
 
 	for _, s := range e.All() {
 		fmt.Printf("%v\n", s)

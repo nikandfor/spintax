@@ -2,6 +2,7 @@
 package spintax
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 )
@@ -31,13 +32,17 @@ type (
 )
 
 // Parse parses template
-func Parse(exp string) Spintax {
-	e, _ := parseExp(exp, 0)
-	return e
+func Parse(exp string) (Spintax, error) {
+	e, i, err := parseExp(exp, 0)
+	if i != len(exp) {
+		return nil, fmt.Errorf("brackets balance error: %v", i)
+	}
+	return e, err
 }
 
-func parseExp(e string, i int) (Spintax, int) {
+func parseExp(e string, i int) (Spintax, int, error) {
 	var r Exp
+	var err error
 	s := i
 loop:
 	for i < len(e) {
@@ -48,7 +53,10 @@ loop:
 				r = append(r, Str(e[s:i]))
 			}
 			var alt Spintax
-			alt, i = parseAlt(e, i)
+			alt, i, err = parseAlt(e, i)
+			if err != nil {
+				return nil, i, err
+			}
 			i++
 			s = i
 			if alt != nil {
@@ -64,31 +72,43 @@ loop:
 		r = append(r, Str(e[s:i]))
 	}
 	if r == nil {
-		return Str(""), i
+		return Str(""), i, nil
 	}
 	if len(r) == 1 {
-		return r[0], i
+		return r[0], i, nil
 	}
-	return r, i
+	return r, i, nil
 }
 
-func parseAlt(e string, i int) (Spintax, int) {
+func parseAlt(e string, i int) (Spintax, int, error) {
 	var r Alt
 	var exp Spintax
+	var err error
+	d := 0
 	for i < len(e) {
 		if e[i] == '}' {
+			d--
 			break
 		}
 		if e[i] == '|' || e[i] == '{' {
+			if e[i] == '{' {
+				d++
+			}
 			i++
 		}
-		exp, i = parseExp(e, i)
+		exp, i, err = parseExp(e, i)
+		if err != nil {
+			return nil, i, err
+		}
 		r = append(r, exp)
 	}
-	if len(r) == 1 {
-		return r[0], i
+	if d != 0 {
+		return nil, i, fmt.Errorf("brackets balance error at pos %v", i)
 	}
-	return r, i
+	if len(r) == 1 {
+		return r[0], i, nil
+	}
+	return r, i, nil
 }
 
 func (e Exp) Spin() string {
